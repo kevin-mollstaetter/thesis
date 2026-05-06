@@ -126,7 +126,7 @@ def testOpMulti
 
 abbrev α := Nat
 abbrev Δα := ΔNat
-abbrev γ := Tree α
+abbrev γ := List α
 abbrev UsedMonad := LazyStateT γ (StateT (α × Nat) Id)
 
 abbrev f := (ΔList.Count.op UsedMonad (α := α) (Δα := Δα) (γ := γ)).f
