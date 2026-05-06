@@ -1,14 +1,18 @@
 import Autoinc.Change
 import Autoinc.Data.Nat.Change
 import Batteries.Data.List
+import Plausible
 
-
+open Plausible in
 /-- change representation for List -/
 inductive ΔList α Δα : Type where
   | ins : Nat → List α → ΔList α Δα
   | del : Nat → Nat → ΔList α Δα
   | upd : Nat → List Δα → ΔList α Δα
-  deriving Repr, BEq
+  deriving Repr, BEq, Arbitrary
+
+open Plausible in
+instance : Shrinkable (ΔList α Δα) where
 
 instance [ToString α] [ToString Δα] : ToString (ΔList α Δα) where
   toString

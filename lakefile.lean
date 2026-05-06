@@ -20,3 +20,5 @@ require "leanprover-community" / "mathlib"
 
 require assertCmd from git
   "https://github.com/pnwamk/lean4-assert-command" @ "main"
+
+require "leanprover-community" / "plausible"

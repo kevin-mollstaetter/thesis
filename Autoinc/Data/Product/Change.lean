@@ -1,11 +1,16 @@
 import Autoinc.Change
+import Plausible
 
+open Plausible in
 /-- change representation for Product -/
 inductive ΔProd (Δα Δβ : Type) : Type where
   | _1 : Δα → ΔProd Δα Δβ
   | _2 : Δβ → ΔProd Δα Δβ
   | _1_2 : Δα → Δβ → ΔProd Δα Δβ
-  deriving Repr
+  deriving Repr, Arbitrary
+
+open Plausible in
+instance : Shrinkable (ΔProd Δα Δβ) where
 
 instance [ToString Δα] [ToString Δβ] : ToString (ΔProd Δα Δβ) where
   toString | ._1 a => "ΔProd._1 " ++ toString a

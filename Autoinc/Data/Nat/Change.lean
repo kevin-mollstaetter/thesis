@@ -1,10 +1,15 @@
 import Autoinc.Change
+import Plausible
 
+open Plausible in
 /-- change representation for Nat -/
 inductive ΔNat : Type where
   | inc : Nat → ΔNat
   | dec : Nat → ΔNat
-deriving Repr, BEq
+deriving Repr, BEq, Arbitrary
+
+open Plausible in
+instance : Shrinkable ΔNat where
 
 instance : ToString ΔNat where
   toString | ΔNat.inc n => s!"inc {n}"
