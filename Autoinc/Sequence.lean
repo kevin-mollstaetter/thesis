@@ -1,6 +1,6 @@
 import Autoinc.Change
 import Autoinc.Data.List.Change
-#check Membership
+
 universe u v in
 class Sequence (α : outParam (Type u)) (γ : Type v) where
   fromList : List α → γ

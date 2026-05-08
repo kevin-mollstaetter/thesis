@@ -19,12 +19,11 @@ abbrev ΔB := List ΔNat
 
 abbrev γ₁ := List Nat
 abbrev Env₁ := LazyEagerState γ₁ (Nat × Nat)
--- TODO: is this the correct type and if so, why? I just satisfied the type checker but have no idea why this works
-def op₁ : Operator A B ΔA ΔB (StateT Env₁ IO) := ΔList.Count.op (LazyEagerStateT γ₁ (Nat × Nat) _) (α := Nat) (Δα := ΔNat) (γ := γ₁)
+def op₁ := ΔList.Count.op (LazyEagerStateT γ₁ (Nat × Nat) IO) (α := Nat) (Δα := ΔNat) (γ := γ₁)
 
-abbrev γ₂ := Tree Nat
+abbrev γ₂ := SequenceTree Nat
 abbrev Env₂ := LazyEagerState γ₂ (Nat × Nat)
-def op₂ : Operator A B ΔA ΔB (StateT Env₂ IO) := ΔList.Count.op (LazyEagerStateT γ₂ (Nat × Nat) _) (α := Nat) (Δα := ΔNat) (γ := γ₂)
+def op₂ := ΔList.Count.op (LazyEagerStateT γ₂ (Nat × Nat) IO) (α := Nat) (Δα := ΔNat) (γ := γ₂)
 
 abbrev inputSize := 9000
 abbrev input₁ := List.range inputSize
@@ -108,12 +107,6 @@ def cases :=
     case_4,
     case_5,
     case_6,
-    -- case_7,
-    -- case_8,
-    -- case_9,
-    -- case_10,
-    -- case_11,
-    -- case_12
   ]
 
 def cases₁ := cases.map (·.1)

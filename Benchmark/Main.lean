@@ -15,6 +15,6 @@ def main : IO Unit := do
   -- Case.execAll' Example8.Benchmark.cases (caption:="append -> cons -> tail -> reverse -> length")
   -- ExperimentReaderT.Case.execAll' Example9.Benchmark.cases_1.1 Example9.Benchmark.cases_1.2 (caption:="drop -> reverse -> drop -> reverse -> all")
   -- ExperimentReaderT.Case.execAll' Example9.Benchmark.cases_2.1 Example9.Benchmark.cases_2.2 (caption:="drop -> reverse -> drop -> reverse -> all")
-  -- Case.execAll' Example11.Benchmark.cases₁ (caption := "count with list")
-  -- Case.execAll' Example11.Benchmark.cases₂ (caption := "count with tree")
-  execAll
+  Case.execAll' Example11.Benchmark.cases₁ (caption := "ΔList.count (list as internal list representation)")
+  Case.execAll' Example11.Benchmark.cases₂ (caption := "ΔList.count (tree as internal list representation)")
+  execAll (caption := "Change.patch on list and tree")
