@@ -1,6 +1,6 @@
 import Autoinc.Change
 import Autoinc.Data.List.Change
-
+#check Membership
 universe u v in
 class Sequence (α : outParam (Type u)) (γ : Type v) where
   fromList : List α → γ
@@ -14,7 +14,7 @@ class Sequence (α : outParam (Type u)) (γ : Type v) where
   insertList : γ → Nat → List α → γ
   deleteRange : γ → Nat → Nat → γ
   concat : γ → γ → γ
-  patchWith : γ → (α → β → α) → List β → γ
+  patchWith {β : Type u} : γ → (α → β → α) → List β → γ
 
 instance : Sequence α (List α) where
   fromList := id
@@ -40,7 +40,7 @@ instance [Sequence α γ] : Append γ where
   append xs ys := Sequence.concat xs ys
 
 instance [ToString α] [Sequence α γ] : ToString γ where
-  toString s := ToString.toString (Sequence.toList (α := α) s)
+  toString s := ToString.toString (Sequence.toList s)
 
 instance [Change α Δα] [Sequence α γ] : Change γ (ΔList α Δα) where
   patch s

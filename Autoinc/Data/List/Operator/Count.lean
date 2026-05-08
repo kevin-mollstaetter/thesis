@@ -72,16 +72,16 @@ variable [BEq α]
 
 def op [Monad m] := (partial_op (α:=α) (Δα:=Δα) (γ := γ) m).toOperator
 
--- variable [ChangeMonad m] [LawfulChangeMonad m]
--- theorem op_valid : (op (α := α) (Δα := Δα) m).valid := by
---   sorry
+variable [ChangeMonad m] [LawfulChangeMonad m]
+theorem op_valid : (op (α := α) (Δα := Δα) (γ := γ) m).valid := by
+  sorry
 
--- theorem op_correct : (op (α := α) (Δα := Δα) m).correct := by
---   sorry
+theorem op_correct : (op (α := α) (Δα := Δα) (γ := γ) m).correct := by
+  sorry
 
--- def spec : (op (α := α) (Δα := Δα) m).spec where
---   valid := op_valid m
---   correct := op_correct m
+def spec : (op (α := α) (Δα := Δα) (γ := γ) m).spec where
+  valid := op_valid m
+  correct := op_correct m
 
 end Count
 end ΔList
@@ -129,8 +129,9 @@ abbrev Δα := ΔNat
 abbrev γ := Tree α
 abbrev UsedMonad := LazyStateT γ (StateT (α × Nat) Id)
 
-abbrev f := (ΔList.Count.op UsedMonad (α := α) (Δα := Δα) (γ := γ)).f
-abbrev Δf := (ΔList.Count.op UsedMonad (α := α) (Δα := Δα) (γ := γ)).Δf
+abbrev op := ΔList.Count.op UsedMonad (α := α) (Δα := Δα) (γ := γ)
+abbrev f := op.f
+abbrev Δf := op.Δf
 
 def testOpSingleChange (input : List α) (x : α) (change : ΔProd (ΔList α Δα) Δα) :=
   testOp (m := UsedMonad) f Δf (input, x) change |>.run default |>.run default |>.fst.fst

@@ -104,8 +104,37 @@ def Tree.delete (t : Tree α) (i : Nat) : Tree α :=
 def Tree.push (t : Tree α) (x : α) : Tree α :=
   t.insert t.size x
 
+def fromListAux (remaining : List (Tree α)) (acc: List (Tree α)) (flip : Bool) : Tree α :=
+  match remaining, acc with
+  | [], _ => .Empty
+  | [a], _ => a
+  | [a, b], [] => if flip then mkNode2 b a else mkNode2 a b
+  | [a, b], acc =>
+    let node := if flip then mkNode2 b a else mkNode2 a b
+    fromListAux (node :: acc) [] !flip
+  | [a, b, c], [] =>
+    if flip then mkNode3 c b a else mkNode3 a b c
+  | [a, b, c], acc =>
+    let node := if flip then mkNode3 c b a else mkNode3 a b c
+    fromListAux (node :: acc) [] !flip
+  | [a, b, c, d], [] =>
+    let node₁ := if flip then mkNode2 b a else mkNode2 a b
+    let node₂ := if flip then mkNode2 d c else mkNode2 c d
+    if flip then mkNode2 node₂ node₁ else mkNode2 node₁ node₂
+  | [a, b, c, d], acc =>
+    let node₁ := if flip then mkNode2 b a else mkNode2 a b
+    let node₂ := if flip then mkNode2 d c else mkNode2 c d
+    fromListAux (node₂ :: node₁ :: acc) [] !flip
+  | a :: b :: c :: remaining, acc =>
+    let node := if flip then mkNode3 c b a else mkNode3 a b c
+    fromListAux remaining (node :: acc) flip
+termination_by remaining.length + acc.length
+
 def Tree.fromList (xs : List α) : Tree α :=
-  xs.foldl (fun t x => t.push x) .Empty
+  fromListAux (xs.map (.Leaf ·)) [] false
+
+def Tree.fromList' (xs : List α) : Tree α :=
+  xs.foldl (fun t x => t.push x) .Empty -- this is horribly slow
 
 def Tree.toList (t : Tree α) : List α :=
   prepend t []
@@ -116,7 +145,7 @@ def Tree.toList (t : Tree α) : List α :=
   | Node2 _ _ l r, xs => prepend l (prepend r xs)
   | Node3 _ _ l m r, xs => prepend l (prepend m (prepend r xs))
 
--- is fold the correct term here?
+-- TODO: is fold the correct term here?
 def Tree.foldl (t : Tree α) (f : β → α → β) (init : β) :=
   match t with
   | Empty => init
@@ -124,8 +153,19 @@ def Tree.foldl (t : Tree α) (f : β → α → β) (init : β) :=
   | Node2 _ _ l r => foldl l f (foldl r f init)
   | Node3 _ _ l m r => foldl l f (foldl m f (foldl r f init))
 
+partial def foldlTRAux (f : β → α → β) (init : β) (remaining : List (Tree α)) : β :=
+  match remaining with
+  | [] => init
+  | .Empty :: remaining => foldlTRAux f init remaining
+  | .Leaf x :: remaining => foldlTRAux f (f init x) remaining
+  | .Node2 _ _ l r :: remaining => foldlTRAux f init (l :: r :: remaining)
+  | .Node3 _ _ l m r :: remaining => foldlTRAux f init (l :: m :: r :: remaining)
+
+def Tree.foldlTR (t : Tree α) (f : β → α → β) (init : β) :=
+  foldlTRAux f init [t]
+
 def Tree.count [BEq α] (t : Tree α) (x : α) : Nat :=
-  t.foldl (fun acc y => if x == y then acc + 1 else acc) 0
+  t.foldlTR (fun acc y => if x == y then acc + 1 else acc) 0
 
 def Tree.getRange (t : Tree α) (i n : Nat) : Tree α :=
   let (_, r) := t.split i
@@ -224,6 +264,20 @@ example (xs : List α) (i : Fin (xs.length)) :
   let t := Tree.fromList xs |>.delete i
   let (xs₁, xs₂) := xs.splitAt i
   t.toList == xs₁ ++ xs₂.tail
+:= by plausible
+
+-- foldlTR = foldl
+example (xs : List α) :
+  let t := Tree.fromList xs
+  let f := (fun acc y => if x == y then acc + 1 else acc)
+  let resTR := t.foldlTR f 0
+  let resNTR := t.foldl f 0
+  resTR == resNTR
+:= by plausible
+
+-- fromList = fromList'
+example (xs : List α) :
+  (Tree.fromList xs |>.toList) == (Tree.fromList' xs |>.toList)
 := by plausible
 
 end Tree.Tests

@@ -8,3 +8,4 @@ import Benchmark.List.Examples.G
 import Benchmark.List.Examples.H
 import Benchmark.List.Examples.I
 import Benchmark.List.Examples.J
+import Benchmark.List.Examples.K
