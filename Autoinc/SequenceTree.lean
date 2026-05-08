@@ -9,7 +9,7 @@ inductive SequenceTree (α : Type) where
   | Leaf (val : α)
   | Node2 (height : Nat) (size : Nat) (left right : SequenceTree α)
   | Node3 (height : Nat) (size : Nat) (left middle right : SequenceTree α)
-deriving BEq
+deriving BEq, Inhabited
 
 def SequenceTree.height : SequenceTree α → Nat
   | Empty | Leaf _ => 0
@@ -28,37 +28,51 @@ def mkNode2 (l r : SequenceTree α) : SequenceTree α :=
 def mkNode3 (l m r : SequenceTree α) : SequenceTree α :=
   .Node3 (l.height + 1) (l.size + m.size + r.size) l m r
 
-def combine : List (SequenceTree α) → List (SequenceTree α)
-  | [a, b] => [mkNode2 a b]
-  | [a, b, c] => [mkNode3 a b c]
-  | [a, b, c, d] => [mkNode2 a b, mkNode2 c d]
-  | _ => panic! "invalid level up state"
+inductive OneOrTwo (α : Type) where
+  | One (a : α)
+  | Two (a b : α)
+deriving Inhabited
 
-def mergeToSameHeight (a b : SequenceTree α) : List (SequenceTree α) :=
+-- assumption a and b are not .Empty and well formed
+def mergeToSameHeight (a b : SequenceTree α) : OneOrTwo (SequenceTree α) :=
   let heightA := a.height
   let heightB := b.height
   if heightA < heightB then
-    -- merge A into B
+    -- merge a into b
+    -- b must be a Node2 or Node3 as b.height > a.height ≥ 1
     match b with
-    | .Node2 _ _ bl br => combine (mergeToSameHeight a bl ++ [br])
-    | .Node3 _ _ bl bm br => combine (mergeToSameHeight a bl ++ [bm, br])
-    | _ => panic! "invalid"
+    | .Node2 _ _ l r =>
+      match mergeToSameHeight a l with
+      | .One t => .One <| mkNode2 t r
+      | .Two t₁ t₂ => .One <| mkNode3 t₁ t₂ r
+    | .Node3 _ _ l m r =>
+      match mergeToSameHeight a l with
+      | .One t => .One <| mkNode3 t m r
+      | .Two t₁ t₂ => .Two (mkNode2 t₁ t₂) (mkNode2 m r)
+    | _ => panic! "a and b must be non empty and well formed!"
   else if heightA > heightB then
-    -- merge B into A
+    -- merge b into a
+    -- a must be a Node2 or Node3 as a.height > b.height ≥ 1
     match a with
-    | .Node2 _ _ al ar => combine ([al] ++ mergeToSameHeight ar b)
-    | .Node3 _ _ al am a3 => combine ([al, am] ++ mergeToSameHeight a3 b)
-    | _ => panic! "invalid"
+    | .Node2 _ _ l r =>
+      match mergeToSameHeight r b with
+      | .One t => .One <| mkNode2 l t
+      | .Two t₁ t₂ => .One <| mkNode3 l t₁ t₂
+    | .Node3 _ _ l m r =>
+      match mergeToSameHeight r b with
+      | .One t => .One <| mkNode3 l m t
+      | .Two t₁ t₂ => .Two (mkNode2 l m) (mkNode2 t₁ t₂)
+    | _ => panic! "a and b must be non empty and well formed!"
   else
-    [a, b]
+    .Two a b
 
 def SequenceTree.merge : SequenceTree α → SequenceTree α → SequenceTree α
   | a, Empty => a
   | Empty, b => b
-  | a, b => match mergeToSameHeight a b with
-    | [t] => t
-    | [t, u] => mkNode2 t u
-    | _ => .Empty -- invalid state, TODO: find cleaner solution
+  | a, b =>
+    match mergeToSameHeight a b with
+    | .One a => a
+    | .Two a b => mkNode2 a b
 
 def SequenceTree.split (i : Nat) : SequenceTree α → (SequenceTree α) × (SequenceTree α)
   | Empty => (Empty, Empty)
@@ -223,9 +237,6 @@ instance : Sequence α (SequenceTree α) where
   deleteRange := SequenceTree.deleteRange
   concat := SequenceTree.merge
   patchWith := SequenceTree.patchWith
-
-instance : Inhabited (SequenceTree α) where
-  default := .Empty
 
 end SequenceTree
 
