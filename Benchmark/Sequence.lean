@@ -11,14 +11,26 @@ def forceSequence [Sequence β γ] (s : γ) : IO Nat := do
   let t₂ ← IO.monoNanosNow
   return t₂ - t₁
 
-def benchmark [Sequence β γ] (f : α → γ) (input : α) (rep : Nat := 50) : IO Float := do
+@[noinline] opaque blackhole {α : Type u} (x : α) : IO Unit := pure ()
+
+-- def benchmark [Sequence β γ] (f : α → γ) (input : α) (rep : Nat := 50) : IO Float := do
+--   let mut total : UInt64 := 0
+--   for _ in [0:rep] do
+--     let start ← IO.monoNanosNow
+--     let result := f input
+--     let t ← forceSequence result
+--     let stop ← IO.monoNanosNow
+--     total := total + (stop - start - t).toUInt64
+--   return total.toFloat / rep.toFloat
+
+def benchmark (f : α → γ) (input : α) (rep : Nat := 50) : IO Float := do
   let mut total : UInt64 := 0
   for _ in [0:rep] do
     let start ← IO.monoNanosNow
     let result := f input
-    let t ← forceSequence result
+    blackhole result
     let stop ← IO.monoNanosNow
-    total := total + (stop - start - t).toUInt64
+    total := total + (stop - start).toUInt64
   return total.toFloat / rep.toFloat
 
 def benchmarkList [Sequence β γ] (f : α → γ) (inputs : List α) (rep : Nat := 50) : IO (List Float) := do

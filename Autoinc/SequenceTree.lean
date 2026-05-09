@@ -184,8 +184,8 @@ def SequenceTree.getRange (t : SequenceTree α) (i n : Nat) : SequenceTree α :=
   r.split n |>.1
 
 def SequenceTree.insertList (t : SequenceTree α) (i : Nat) (xs : List α) : SequenceTree α :=
-  let txs := SequenceTree.fromList xs
-  let (l, r) := t.split i
+  let txs := SequenceTree.fromList xs -- O(|xs|)
+  let (l, r) := t.split i -- O(log n)
   l.merge txs |>.merge r
 
 def SequenceTree.deleteRange (t : SequenceTree α) (i n : Nat) : SequenceTree α :=
