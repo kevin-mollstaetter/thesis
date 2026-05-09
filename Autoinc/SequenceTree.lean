@@ -158,27 +158,26 @@ def SequenceTree.toList (t : SequenceTree α) : List α :=
   | Node2 _ _ l r, xs => prepend l (prepend r xs)
   | Node3 _ _ l m r, xs => prepend l (prepend m (prepend r xs))
 
--- TODO: is fold the correct term here?
-def SequenceTree.foldl (t : SequenceTree α) (f : β → α → β) (init : β) :=
+def SequenceTree.foldlLeaves (t : SequenceTree α) (f : β → α → β) (init : β) :=
   match t with
   | Empty => init
   | Leaf x => f init x
-  | Node2 _ _ l r => foldl l f (foldl r f init)
-  | Node3 _ _ l m r => foldl l f (foldl m f (foldl r f init))
+  | Node2 _ _ l r => foldlLeaves l f (foldlLeaves r f init)
+  | Node3 _ _ l m r => foldlLeaves l f (foldlLeaves m f (foldlLeaves r f init))
 
-partial def foldlTRAux (f : β → α → β) (init : β) (remaining : List (SequenceTree α)) : β :=
+partial def foldlLeavesTRAux (f : β → α → β) (init : β) (remaining : List (SequenceTree α)) : β :=
   match remaining with
   | [] => init
-  | .Empty :: remaining => foldlTRAux f init remaining
-  | .Leaf x :: remaining => foldlTRAux f (f init x) remaining
-  | .Node2 _ _ l r :: remaining => foldlTRAux f init (l :: r :: remaining)
-  | .Node3 _ _ l m r :: remaining => foldlTRAux f init (l :: m :: r :: remaining)
+  | .Empty :: remaining => foldlLeavesTRAux f init remaining
+  | .Leaf x :: remaining => foldlLeavesTRAux f (f init x) remaining
+  | .Node2 _ _ l r :: remaining => foldlLeavesTRAux f init (l :: r :: remaining)
+  | .Node3 _ _ l m r :: remaining => foldlLeavesTRAux f init (l :: m :: r :: remaining)
 
-def SequenceTree.foldlTR (t : SequenceTree α) (f : β → α → β) (init : β) :=
-  foldlTRAux f init [t]
+def SequenceTree.foldlLeavesTR (t : SequenceTree α) (f : β → α → β) (init : β) :=
+  foldlLeavesTRAux f init [t]
 
 def SequenceTree.count [BEq α] (t : SequenceTree α) (x : α) : Nat :=
-  t.foldlTR (fun acc y => if x == y then acc + 1 else acc) 0
+  t.foldlLeavesTR (fun acc y => if x == y then acc + 1 else acc) 0
 
 def SequenceTree.getRange (t : SequenceTree α) (i n : Nat) : SequenceTree α :=
   let (_, r) := t.split i
@@ -222,7 +221,35 @@ def SequenceTree.patchWith (t : SequenceTree α) (f : α → β → α) (ds : Li
       let (patchedM, ds'') := helper m ds'
       let (patchedR, ds''') := helper r ds''
       (Node3 h s patchedL patchedM patchedR, ds''')
+
   helper t ds |>.1
+
+-- this is slower than the non tail recursive version
+def SequenceTree.patchWithTR
+  (t : SequenceTree α)
+  (f : α → β → α)
+  (ds : List β)
+: SequenceTree α :=
+  let rec helper
+    (t : SequenceTree α)
+    (ds : List β)
+    (cont : SequenceTree α → List β → SequenceTree α)
+  : SequenceTree α :=
+    match t, ds with
+    | t, [] => cont t []
+    | Empty, ds => cont Empty ds
+    | Leaf x, d :: ds => cont (Leaf (f x d)) ds
+    | Node2 h s l r, ds =>
+      helper l ds (fun patchedL ds' =>
+        helper r ds' (fun patchedR ds'' =>
+          cont (Node2 h s patchedL patchedR) ds''))
+    | Node3 h s l m r, ds =>
+      helper l ds (fun patchedL ds' =>
+        helper m ds' (fun patchedM ds'' =>
+          helper r ds'' (fun patchedR ds''' =>
+            cont (Node3 h s patchedL patchedM patchedR) ds''')))
+
+  helper t ds (fun t _ => t)
 
 instance : Sequence α (SequenceTree α) where
   fromList := SequenceTree.fromList
@@ -292,14 +319,20 @@ example (xs : List α) (i : Fin (xs.length)) :
 example (xs : List α) :
   let t := SequenceTree.fromList xs
   let f := (fun acc y => if x == y then acc + 1 else acc)
-  let resTR := t.foldlTR f 0
-  let resNTR := t.foldl f 0
+  let resTR := t.foldlLeavesTR f 0
+  let resNTR := t.foldlLeaves f 0
   resTR == resNTR
 := by plausible
 
 -- fromList = fromList'
 example (xs : List α) :
   (SequenceTree.fromList xs |>.toList) == (SequenceTree.fromList' xs |>.toList)
+:= by plausible
+
+-- patchWith = patchWithTR
+example (xs : List α) (ds : List ΔNat) :
+  let t := SequenceTree.fromList xs
+  (t.patchWith (· ⨁ ·) ds |>.toList) == (t.patchWithTR (· ⨁ ·) ds |>.toList)
 := by plausible
 
 end SequenceTree.Tests
